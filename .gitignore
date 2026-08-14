@@ -1,0 +1,41 @@
+# Secrets
+.env
+*.env
+!.env.example
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+
+# Runtime
+custom_voices/
+upload_tmp/
+tmp/
+output/
+
+# Voice files
+*.wav
+*.mp3
+*.flac
+*.ogg
+*.m4a
+
+# AI models
+*.pt
+*.pth
+*.bin
+*.onnx
+*.safetensors
+*.ckpt
+
+models/
+cache/
+.cache/
+
+# Logs / backups
+*.log
+*.bak
+*.bak-*

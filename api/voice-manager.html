@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>VieNeu-TTS Voice Manager</title>
+
+  <style>
+    :root {
+      font-family: Arial, sans-serif;
+      color-scheme: dark;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #111827;
+      color: #e5e7eb;
+    }
+
+    header {
+      padding: 22px 28px;
+      background: #1f2937;
+      border-bottom: 1px solid #374151;
+    }
+
+    header h1 {
+      margin: 0 0 6px;
+      font-size: 26px;
+    }
+
+    header p {
+      margin: 0;
+      color: #9ca3af;
+    }
+
+    main {
+      max-width: 1200px;
+      margin: auto;
+      padding: 24px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+      gap: 20px;
+    }
+
+    .card {
+      background: #1f2937;
+      border: 1px solid #374151;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    h2 {
+      margin-top: 0;
+      font-size: 20px;
+    }
+
+    label {
+      display: block;
+      margin: 14px 0 6px;
+      font-weight: bold;
+    }
+
+    input,
+    select,
+    textarea,
+    button {
+      width: 100%;
+      padding: 11px;
+      border-radius: 7px;
+      border: 1px solid #4b5563;
+      font-size: 15px;
+    }
+
+    input,
+    select,
+    textarea {
+      background: #111827;
+      color: #f9fafb;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 90px;
+    }
+
+    button {
+      margin-top: 14px;
+      border: none;
+      background: #2563eb;
+      color: white;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:hover {
+      background: #1d4ed8;
+    }
+
+    button.danger {
+      background: #dc2626;
+    }
+
+    button.secondary {
+      background: #4b5563;
+    }
+
+    button.small {
+      width: auto;
+      margin: 3px;
+      padding: 7px 11px;
+      font-size: 13px;
+    }
+
+    .checkbox-row {
+      display: flex;
+      gap: 22px;
+      margin-top: 14px;
+    }
+
+    .checkbox-row label {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin: 0;
+      font-weight: normal;
+    }
+
+    .checkbox-row input {
+      width: auto;
+    }
+
+    .status {
+      display: none;
+      margin-bottom: 18px;
+      padding: 13px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+    }
+
+    .status.success {
+      display: block;
+      background: #064e3b;
+      border: 1px solid #10b981;
+    }
+
+    .status.error {
+      display: block;
+      background: #7f1d1d;
+      border: 1px solid #ef4444;
+    }
+
+    .status.info {
+      display: block;
+      background: #1e3a8a;
+      border: 1px solid #3b82f6;
+    }
+
+    audio {
+      width: 100%;
+      margin-top: 14px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    th,
+    td {
+      padding: 11px;
+      border-bottom: 1px solid #374151;
+      text-align: left;
+      vertical-align: middle;
+    }
+
+    th {
+      color: #93c5fd;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+    }
+
+    .muted {
+      color: #9ca3af;
+      font-size: 13px;
+    }
+
+    .api-row {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 10px;
+    }
+
+    .api-row button {
+      width: auto;
+      margin: 0;
+    }
+
+    .download {
+      display: inline-block;
+      margin-top: 12px;
+      color: #60a5fa;
+    }
+  </style>
+</head>
+
+<body>
+<header>
+  <h1>VieNeu-TTS Voice Manager</h1>
+  <p>Tải WAV, xử lý, lưu giọng clone và sử dụng qua REST API.</p>
+</header>
+
+<main>
+  <div id="status" class="status"></div>
+
+  <section class="card">
+    <h2>1. Kết nối REST API</h2>
+
+    <label for="apiKey">API Key</label>
+
+    <div class="api-row">
+      <input
+        id="apiKey"
+        type="password"
+        placeholder="Nhập VIENEU_API_KEY"
+      >
+      <button type="button" onclick="saveApiKey()">
+        Lưu key
+      </button>
+    </div>
+
+    <p class="muted">
+      API Key chỉ được lưu trong trình duyệt hiện tại.
+    </p>
+  </section>
+
+  <div class="grid">
+    <section class="card">
+      <h2>2. Thêm giọng clone</h2>
+
+      <form id="voiceForm">
+        <label for="audio">File giọng mẫu WAV</label>
+        <input
+          id="audio"
+          name="audio"
+          type="file"
+          accept=".wav,audio/wav"
+          required
+        >
+
+        <audio id="originalPreview" controls></audio>
+
+        <label for="name">Tên hiển thị</label>
+        <input
+          id="name"
+          name="name"
+          placeholder="Ví dụ: Anh Khoa"
+          required
+        >
+
+        <label for="voiceId">Voice ID</label>
+        <input
+          id="voiceId"
+          name="voice_id"
+          placeholder="Để trống sẽ tự tạo, ví dụ: anh-khoa"
+        >
+
+        <label for="gender">Giới tính</label>
+        <select id="gender" name="gender">
+          <option value="">Không xác định</option>
+          <option value="Nam">Nam</option>
+          <option value="Nữ">Nữ</option>
+        </select>
+
+        <label for="region">Vùng miền</label>
+        <select id="region" name="region">
+          <option value="">Không xác định</option>
+          <option value="Bắc">Bắc</option>
+          <option value="Trung">Trung</option>
+          <option value="Nam">Nam</option>
+        </select>
+
+        <label for="style">Phong cách</label>
+        <select id="style" name="style">
+          <option value="Tự nhiên">Tự nhiên</option>
+          <option value="Tin tức">Tin tức</option>
+          <option value="Kể chuyện">Kể chuyện</option>
+          <option value="Review">Review</option>
+        </select>
+
+        <label for="description">Mô tả</label>
+        <textarea
+          id="description"
+          name="description"
+          placeholder="Ví dụ: Giọng nam dùng đọc video công nghệ"
+        ></textarea>
+
+        <label for="referenceText">
+          Nội dung được đọc trong file mẫu
+        </label>
+
+        <textarea
+          id="referenceText"
+          name="reference_text"
+          placeholder="Có thể để trống đối với VieNeu-TTS v3 Turbo"
+        ></textarea>
+
+        <div class="checkbox-row">
+          <label>
+            <input
+              type="checkbox"
+              name="denoise"
+              value="true"
+              checked
+            >
+            Khử nhiễu
+          </label>
+
+          <label>
+            <input
+              type="checkbox"
+              name="trim_silence"
+              value="true"
+              checked
+            >
+            Cắt khoảng lặng
+          </label>
+        </div>
+
+        <button type="submit">
+          Xử lý và lưu giọng
+        </button>
+      </form>
+    </section>
+
+    <section class="card">
+      <h2>3. Tạo giọng thử</h2>
+
+      <label for="testVoice">Chọn giọng</label>
+      <select id="testVoice"></select>
+
+      <label for="testText">Nội dung cần đọc</label>
+      <textarea id="testText">
+Xin chào, đây là bài kiểm tra giọng nói đã được lưu trong hệ thống VieNeu-TTS.
+      </textarea>
+
+      <button type="button" onclick="generateTestAudio()">
+        Tạo giọng thử
+      </button>
+
+      <audio id="testAudio" controls></audio>
+
+      <a
+        id="downloadAudio"
+        class="download"
+        download="vieneu-test.wav"
+        style="display:none"
+      >
+        Tải file WAV
+      </a>
+    </section>
+  </div>
+
+  <section class="card">
+    <h2>4. Kho giọng clone đã lưu</h2>
+
+    <button
+      type="button"
+      class="secondary"
+      onclick="loadVoices()"
+    >
+      Làm mới danh sách
+    </button>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+        <tr>
+          <th>Tên</th>
+          <th>Voice ID</th>
+          <th>Thông tin</th>
+          <th>Thao tác</th>
+        </tr>
+        </thead>
+
+        <tbody id="voiceTable">
+        <tr>
+          <td colspan="4">Đang tải...</td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+  const apiKeyInput = document.getElementById("apiKey");
+  const statusBox = document.getElementById("status");
+  const voiceForm = document.getElementById("voiceForm");
+  const voiceTable = document.getElementById("voiceTable");
+  const testVoice = document.getElementById("testVoice");
+  const testAudio = document.getElementById("testAudio");
+  const downloadAudio = document.getElementById("downloadAudio");
+
+  let currentAudioUrl = null;
+  let originalPreviewUrl = null;
+
+  apiKeyInput.value =
+    localStorage.getItem("vieneu_api_key") || "";
+
+  function authHeaders(json = false) {
+    const headers = {};
+
+    const key = apiKeyInput.value.trim();
+
+    if (key) {
+      headers["X-API-Key"] = key;
+    }
+
+    if (json) {
+      headers["Content-Type"] = "application/json";
+    }
+
+    return headers;
+  }
+
+  function showStatus(message, type = "info") {
+    statusBox.className = "status " + type;
+    statusBox.textContent = message;
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function saveApiKey() {
+    localStorage.setItem(
+      "vieneu_api_key",
+      apiKeyInput.value.trim()
+    );
+
+    showStatus("Đã lưu API Key trong trình duyệt.", "success");
+    loadVoices();
+  }
+
+  function escapeHtml(value) {
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
+  }
+
+  async function parseError(response) {
+    try {
+      const data = await response.json();
+      return data.detail || JSON.stringify(data);
+    } catch {
+      return await response.text();
+    }
+  }
+
+  document
+    .getElementById("audio")
+    .addEventListener("change", event => {
+      const file = event.target.files[0];
+
+      if (!file) {
+        return;
+      }
+
+      if (originalPreviewUrl) {
+        URL.revokeObjectURL(originalPreviewUrl);
+      }
+
+      originalPreviewUrl = URL.createObjectURL(file);
+      document.getElementById("originalPreview").src =
+        originalPreviewUrl;
+    });
+
+  voiceForm.addEventListener("submit", async event => {
+    event.preventDefault();
+
+    const fileInput = document.getElementById("audio");
+
+    if (!fileInput.files.length) {
+      showStatus("Chưa chọn file WAV.", "error");
+      return;
+    }
+
+    const formData = new FormData(voiceForm);
+
+    if (!formData.get("voice_id")) {
+      formData.delete("voice_id");
+    }
+
+    if (!document.querySelector(
+      'input[name="denoise"]'
+    ).checked) {
+      formData.set("denoise", "false");
+    }
+
+    if (!document.querySelector(
+      'input[name="trim_silence"]'
+    ).checked) {
+      formData.set("trim_silence", "false");
+    }
+
+    showStatus(
+      "Đang tải file lên, xử lý và lưu giọng...",
+      "info"
+    );
+
+    try {
+      const response = await fetch(
+        "/api/custom-voices",
+        {
+          method: "POST",
+          headers: authHeaders(),
+          body: formData
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      const result = await response.json();
+      const voiceId = result.voice.id;
+
+      showStatus(
+        `Đã lưu giọng thành công.\nVoice ID: ${voiceId}`,
+        "success"
+      );
+
+      voiceForm.reset();
+
+      document.querySelector(
+        'input[name="denoise"]'
+      ).checked = true;
+
+      document.querySelector(
+        'input[name="trim_silence"]'
+      ).checked = true;
+
+      await loadVoices();
+      await playReference(voiceId);
+
+    } catch (error) {
+      showStatus(
+        "Lưu giọng thất bại: " + error.message,
+        "error"
+      );
+    }
+  });
+
+  async function loadVoices() {
+    try {
+      const response = await fetch(
+        "/api/voices",
+        {
+          headers: authHeaders()
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      const result = await response.json();
+      const voices = result.voices || [];
+      const customVoices = voices.filter(
+        item => item.type === "custom"
+      );
+
+      testVoice.innerHTML = "";
+
+      for (const voice of voices) {
+        const option = document.createElement("option");
+        option.value = voice.id;
+        option.textContent =
+          `${voice.name} [${voice.type}]`;
+        testVoice.appendChild(option);
+      }
+
+      if (!customVoices.length) {
+        voiceTable.innerHTML =
+          '<tr><td colspan="4">Chưa có giọng clone nào.</td></tr>';
+        return;
+      }
+
+      voiceTable.innerHTML = customVoices.map(voice => {
+        const details = [
+          voice.gender,
+          voice.region,
+          voice.style
+        ].filter(Boolean).join(" · ");
+
+        return `
+          <tr>
+            <td>
+              <strong>${escapeHtml(voice.name)}</strong>
+              <div class="muted">
+                ${escapeHtml(voice.description || "")}
+              </div>
+            </td>
+
+            <td>${escapeHtml(voice.id)}</td>
+
+            <td>${escapeHtml(details)}</td>
+
+            <td>
+              <button
+                class="small secondary"
+                onclick="playReference('${escapeHtml(voice.id)}')"
+              >
+                Nghe mẫu
+              </button>
+
+              <button
+                class="small"
+                onclick="selectVoice('${escapeHtml(voice.id)}')"
+              >
+                Dùng thử
+              </button>
+
+              <button
+                class="small danger"
+                onclick="deleteVoice('${escapeHtml(voice.id)}')"
+              >
+                Xóa
+              </button>
+            </td>
+          </tr>
+        `;
+      }).join("");
+
+    } catch (error) {
+      voiceTable.innerHTML =
+        `<tr><td colspan="4">${escapeHtml(error.message)}</td></tr>`;
+
+      showStatus(
+        "Không tải được danh sách giọng: " + error.message,
+        "error"
+      );
+    }
+  }
+
+  function selectVoice(voiceId) {
+    testVoice.value = voiceId;
+
+    document
+      .getElementById("testText")
+      .scrollIntoView({ behavior: "smooth" });
+  }
+
+  async function playReference(voiceId) {
+    showStatus(
+      `Đang tải file mẫu đã xử lý: ${voiceId}`,
+      "info"
+    );
+
+    try {
+      const response = await fetch(
+        `/api/custom-voices/${encodeURIComponent(voiceId)}/audio`,
+        {
+          headers: authHeaders()
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      const blob = await response.blob();
+
+      if (currentAudioUrl) {
+        URL.revokeObjectURL(currentAudioUrl);
+      }
+
+      currentAudioUrl = URL.createObjectURL(blob);
+
+      testAudio.src = currentAudioUrl;
+      testAudio.play();
+
+      downloadAudio.href = currentAudioUrl;
+      downloadAudio.download = `${voiceId}-reference.wav`;
+      downloadAudio.style.display = "inline-block";
+
+      showStatus(
+        `Đang phát file mẫu đã xử lý của giọng: ${voiceId}`,
+        "success"
+      );
+
+    } catch (error) {
+      showStatus(
+        "Không phát được file mẫu: " + error.message,
+        "error"
+      );
+    }
+  }
+
+  async function generateTestAudio() {
+    const voice = testVoice.value;
+    const text =
+      document.getElementById("testText").value.trim();
+
+    if (!voice) {
+      showStatus("Chưa chọn giọng.", "error");
+      return;
+    }
+
+    if (!text) {
+      showStatus("Chưa nhập nội dung cần đọc.", "error");
+      return;
+    }
+
+    showStatus("Đang tạo giọng thử...", "info");
+
+    try {
+      const response = await fetch(
+        "/api/tts",
+        {
+          method: "POST",
+          headers: authHeaders(true),
+          body: JSON.stringify({
+            text: text,
+            voice: voice,
+            filename: `test-${voice}.wav`
+          })
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      const blob = await response.blob();
+
+      if (currentAudioUrl) {
+        URL.revokeObjectURL(currentAudioUrl);
+      }
+
+      currentAudioUrl = URL.createObjectURL(blob);
+
+      testAudio.src = currentAudioUrl;
+      testAudio.play();
+
+      downloadAudio.href = currentAudioUrl;
+      downloadAudio.download = `test-${voice}.wav`;
+      downloadAudio.style.display = "inline-block";
+
+      showStatus("Tạo giọng thử thành công.", "success");
+
+    } catch (error) {
+      showStatus(
+        "Tạo giọng thử thất bại: " + error.message,
+        "error"
+      );
+    }
+  }
+
+  async function deleteVoice(voiceId) {
+    const confirmed = confirm(
+      `Xóa giọng "${voiceId}" khỏi hệ thống?`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    try {
+      const response = await fetch(
+        `/api/custom-voices/${encodeURIComponent(voiceId)}`,
+        {
+          method: "DELETE",
+          headers: authHeaders()
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(await parseError(response));
+      }
+
+      showStatus(
+        `Đã xóa giọng: ${voiceId}`,
+        "success"
+      );
+
+      await loadVoices();
+
+    } catch (error) {
+      showStatus(
+        "Xóa giọng thất bại: " + error.message,
+        "error"
+      );
+    }
+  }
+
+  loadVoices();
+</script>
+</body>
+</html>

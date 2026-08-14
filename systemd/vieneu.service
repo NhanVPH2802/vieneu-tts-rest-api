@@ -1,0 +1,23 @@
+[Unit]
+Description=VieNeu-TTS WebUI
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vieneu
+Group=vieneu
+WorkingDirectory=/opt/VieNeu-TTS
+
+Environment=HOME=/opt/VieNeu-TTS
+Environment=GRADIO_SERVER_NAME=0.0.0.0
+Environment=GRADIO_SERVER_PORT=7860
+Environment=HF_HOME=/opt/VieNeu-TTS/.cache/huggingface
+
+ExecStart=/opt/VieNeu-TTS/.venv/bin/vieneu-web
+
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

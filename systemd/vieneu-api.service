@@ -1,0 +1,23 @@
+[Unit]
+Description=VieNeu-TTS REST API
+After=network-online.target vieneu.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=vieneu
+Group=vieneu
+WorkingDirectory=/opt/vieneu-api
+
+EnvironmentFile=/etc/vieneu-api.env
+Environment=PYTHONUNBUFFERED=1
+Environment=GRADIO_ANALYTICS_ENABLED=False
+
+ExecStart=/opt/vieneu-api/.venv/bin/uvicorn app:app --host 0.0.0.0 --port 8000 --workers 1
+
+Restart=on-failure
+RestartSec=10
+TimeoutStartSec=600
+
+[Install]
+WantedBy=multi-user.target
