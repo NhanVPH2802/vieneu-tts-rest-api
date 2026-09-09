@@ -139,16 +139,18 @@ clone_public_repo() {
 }
 
 clone_private_repo() {
-    local gh_pat
+    local gh_pat="${GH_PAT:-}"
     local auth_b64
 
-    echo
-    echo "Repository khong clone duoc anonymous."
-    echo "Neu repo dang Private, nhap GitHub PAT co quyen Read."
-    echo
+    if [[ -z "${gh_pat}" ]]; then
+        echo
+        echo "Repository dang Private."
+        echo "Nhap GitHub PAT co quyen Read repository."
+        echo
 
-    read -r -s -p "GitHub PAT: " gh_pat
-    echo
+        read -r -s -p "GitHub PAT: " gh_pat
+        echo
+    fi
 
     if [[ -z "${gh_pat}" ]]; then
         echo "ERROR: PAT rong."
@@ -167,7 +169,6 @@ clone_private_repo() {
         "${UPSTREAM_REPO}" \
         "${VIENEU_DIR}"
 
-    unset gh_pat
     unset auth_b64
 }
 
